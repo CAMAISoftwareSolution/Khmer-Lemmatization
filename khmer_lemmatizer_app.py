@@ -61,82 +61,6 @@ DEFAULT_STATS = {
 
 EMPTY_TABLE = [["-", "—", "—", "—"]]
 
-CUSTOM_CSS = """
-.gradio-container {
-  font-family: 'Inter', 'Noto Sans Khmer', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #f5f7fb;
-}
-
-.hero-card {
-  background: linear-gradient(135deg, #0f172a, #1d4ed8);
-  color: #f8fafc;
-  padding: 32px;
-  border-radius: 20px;
-  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.25);
-  margin-bottom: 24px;
-}
-
-.hero-card h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.hero-card p {
-  font-size: 1rem;
-  color: rgba(248, 250, 252, 0.9);
-}
-
-.panel {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 24px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-  border: 1px solid #e5e9f2;
-}
-
-.button-row button {
-  border-radius: 999px !important;
-  padding: 12px 20px !important;
-  font-weight: 600;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 16px;
-  margin-top: 8px;
-}
-
-.stat-card {
-  background: #f8fafc;
-  border-radius: 14px;
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-}
-
-.stat-label {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  color: #64748b;
-  letter-spacing: 0.05em;
-}
-
-.stat-value {
-  display: block;
-  margin-top: 6px;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.results-table .table-wrap {
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-}
-"""
-
 @dataclass
 class LemmaRow:
     token: str
@@ -198,17 +122,52 @@ def format_stats(rows: Sequence[LemmaRow], original_text: str) -> Dict[str, str]
     }
 
 
-def render_stats_html(stats: Dict[str, str]) -> str:
+def render_stats_cards(stats: Dict[str, str]) -> str:
     cards = "".join(
         f"""
-        <div class="stat-card">
-            <span class="stat-label">{label}</span>
-            <span class="stat-value">{value}</span>
+        <div class="kpi-card">
+            <span class="kpi-label">{label}</span>
+            <span class="kpi-value">{value}</span>
         </div>
         """
         for label, value in stats.items()
     )
-    return f'<div class="stats-grid">{cards}</div>'
+    return f"""
+    <style>
+      .kpi-grid {{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        width: 100%;
+      }}
+      .kpi-card {{
+        border-radius: 16px;
+        padding: 18px 20px;
+        border: 1px solid var(--border-color-primary, rgba(148, 163, 184, 0.35));
+        background: var(--block-background-fill, var(--background-fill-secondary, #fff));
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      }}
+      .kpi-label {{
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--body-text-color-subdued, #64748b);
+      }}
+      .kpi-value {{
+        display: block;
+        margin-top: 8px;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--body-text-color, #0f172a);
+      }}
+      @media (prefers-color-scheme: dark) {{
+        .kpi-card {{
+          box-shadow: none;
+        }}
+      }}
+    </style>
+    <div class="kpi-grid">{cards}</div>
+    """
 
 
 def run_pipeline(text: str) -> tuple:
@@ -224,11 +183,11 @@ def run_pipeline(text: str) -> tuple:
     if not table:
         # Inform the UI that there is nothing to display.
         table = [["-", "—", "—", "—"]]
-    return table, render_stats_html(stats)
+    return table, render_stats_cards(stats)
 
 
 def clear_inputs():
-    return "", EMPTY_TABLE, render_stats_html(DEFAULT_STATS)
+    return "", EMPTY_TABLE, render_stats_cards(DEFAULT_STATS)
 
 
 def build_interface():
@@ -238,40 +197,39 @@ def build_interface():
         ) from _GRADIO_IMPORT_ERROR
     with gr.Blocks(
         title="Khmer Lemmatization Studio",
-        theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="gray"),
-        css=CUSTOM_CSS,
+        theme=gr.themes.Default(),
     ) as demo:
         gr.HTML(
             """
-            <div class="hero-card">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
               <h1>Khmer Lemmatization Studio</h1>
-              <p>Paste Khmer sentences, process them instantly, and compare each token to its lemma with a polished review surface.</p>
+              <p>Paste Khmer sentences, process them instantly, and compare each token to its lemma.</p>
             </div>
             """
         )
 
         with gr.Row():
-            with gr.Column(scale=3, elem_classes="panel"):
+            with gr.Column(scale=3):
                 text_input = gr.Textbox(
                     label="Input text",
                     placeholder="វាយអត្ថបទខ្មែរ ឬបិទភ្ជាប់ពីឯកសារ...",
                     lines=10,
                     autofocus=True,
                 )
-                with gr.Row(elem_classes="button-row"):
-                    process_btn = gr.Button("Run Lemmatization", variant="primary")
+                with gr.Row():
+                    process_btn = gr.Button("Lemmatization", variant="primary")
                     sample_btn = gr.Button("Load Sample")
                     clear_btn = gr.Button("Clear")
                 gr.Markdown(
                     """
                     **Workflow**
                     1. Paste or type Khmer text.
-                    2. Click "Run Lemmatization".
+                    2. Click "Lemmatization".
                     3. Review tokens, lemmas, and changes on the right.
                     """
                 )
-            with gr.Column(scale=4, elem_classes="panel"):
-                stats_panel = gr.HTML(render_stats_html(DEFAULT_STATS))
+            with gr.Column(scale=4):
+                stats_panel = gr.HTML(render_stats_cards(DEFAULT_STATS))
                 results_table = gr.Dataframe(
                     headers=["#", "Token", "Lemma", "Changed?"],
                     datatype=["number", "str", "str", "str"],
