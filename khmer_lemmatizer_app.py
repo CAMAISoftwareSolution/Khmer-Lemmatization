@@ -254,7 +254,7 @@ def build_interface():
         gr.HTML(
             f"""
             <div style="margin-top: 2rem; padding: 20px; background: var(--background-fill-secondary); border-radius: 12px;">
-              <h2 style="margin-top: 0;">📚 Dictionary Source</h2>
+              <h2 style="margin-top: 0;">Dictionary Source</h2>
               <p style="font-size: 1rem; margin: 12px 0;">
                 <strong>Source:</strong> Teacher Vatha -
                 <a href="https://youtu.be/mfWl3fV7oMo?si=OuR45gnDqeml2oXw" target="_blank" style="color: var(--link-text-color); text-decoration: underline;">
@@ -262,7 +262,7 @@ def build_interface():
                 </a>
               </p>
               <p style="font-size: 1rem; margin: 12px 0;">
-                <strong>📊 Total words our in dictionary:</strong> {len(LEMMA_DICT):,} entries
+                <strong>Total words our in dictionary:</strong> {len(LEMMA_DICT):,} entries
               </p>
             </div>
             """
