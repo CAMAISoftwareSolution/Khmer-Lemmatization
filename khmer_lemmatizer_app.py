@@ -35,7 +35,7 @@ SAMPLE_TEXT = ("យើងត្រូវតែផ្គាប់ចិត្ត�
 )
  
 DEFAULT_STATS = {
-    "Characters": "0",
+    # "Characters": "0",
     "Total tokens": "0",
     "Lemmatized tokens": "0",
 }
@@ -97,7 +97,7 @@ def format_stats(rows: Sequence[LemmaRow], original_text: str) -> Dict[str, str]
     token_count = len(rows)
     changed = sum(1 for row in rows if row.changed)
     return {
-        "Characters": f"{char_count:,}",
+        # "Characters": f"{char_count:,}",
         "Total tokens": f"{token_count:,}",
         "Lemmatized tokens": f"{changed:,}",
     }
@@ -168,7 +168,8 @@ def run_pipeline(text: str) -> tuple:
 
 
 def clear_inputs():
-    return "", EMPTY_TABLE, render_stats_cards(DEFAULT_STATS)
+    # Use gr.update to reset both value and filters
+    return "", gr.update(value=EMPTY_TABLE), render_stats_cards(DEFAULT_STATS)
 
 
 def build_interface():
@@ -184,7 +185,7 @@ def build_interface():
             """
             <div style="text-align: center; margin-bottom: 1.5rem;">
               <h1>Khmer Lemmatization Studio</h1>
-              <p>Paste Khmer sentences, process them instantly, and compare each token to its lemma.</p>
+              <p>Paste Khmer sentences, process them instantly, and compare each token to its Lemmatization.</p>
             </div>
             """
         )
@@ -193,7 +194,7 @@ def build_interface():
             with gr.Column(scale=3):
                 text_input = gr.Textbox(
                     label="Input text",
-                    placeholder="វាយអត្ថបទខ្មែរ ឬបិទភ្ជាប់ពីឯកសារ...",
+                    placeholder="វាយអត្ថបទខ្មែរ...",
                     lines=10,
                     autofocus=True,
                 )
@@ -212,12 +213,13 @@ def build_interface():
             with gr.Column(scale=4):
                 stats_panel = gr.HTML(render_stats_cards(DEFAULT_STATS))
                 results_table = gr.Dataframe(
-                    headers=["#", "Token", "Lemma", "Status"],
+                    headers=["#", "Token", "Lemmatization", "Status"],
                     datatype=["number", "str", "str", "str"],
                     value=EMPTY_TABLE,
                     interactive=False,
                     wrap=True,
                     label="Results",
+                    elem_id="results_table"
                 )
 
         process_btn.click(fn=run_pipeline, inputs=text_input, outputs=[results_table, stats_panel])
@@ -230,6 +232,7 @@ def build_interface():
             fn=clear_inputs,
             inputs=None,
             outputs=[text_input, results_table, stats_panel],
+            js="() => { const table = document.getElementById('results_table'); if (table) { const inputs = table.querySelectorAll('input[type=\"text\"]'); inputs.forEach(input => input.value = ''); } }"
         )
 
         # Reference and Dictionary Section
