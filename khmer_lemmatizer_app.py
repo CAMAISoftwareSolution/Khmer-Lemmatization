@@ -265,6 +265,21 @@ def build_interface():
             label="Complete Lemmatization Dictionary",
         )
 
+        # Developer Credits
+        gr.Markdown("---")
+        gr.HTML(
+            """
+            <div style="text-align: center; padding: 20px; margin-top: 1rem;">
+              <p style="font-size: 0.9rem; color: var(--body-text-color-subdued, #64748b);">
+                <strong>Developed by:</strong>
+                <a href="https://phorknorak.vercel.app/" target="_blank" style="color: var(--link-text-color); text-decoration: none; font-weight: 500;">Phork Norak</a>,
+                <a href="https://povketya.github.io/ketyanhor/" target="_blank" style="color: var(--link-text-color); text-decoration: none; font-weight: 500;">Nhor Povketya</a>,
+                <a href="https://final-portfolio-kappa-rust.vercel.app/" target="_blank" style="color: var(--link-text-color); text-decoration: none; font-weight: 500;">Ly Hor</a>
+              </p>
+            </div>
+            """
+        )
+
     return demo
 
 
