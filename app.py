@@ -179,7 +179,6 @@ def build_interface():
         ) from _GRADIO_IMPORT_ERROR
     with gr.Blocks(
         title="Khmer Lemmatization Studio",
-        theme=gr.themes.Default(),
     ) as demo:
         gr.HTML(
             """
@@ -285,11 +284,7 @@ def build_interface():
 
 LEMMA_DICT = load_dictionary()
 
+demo = build_interface()
 
 if __name__ == "__main__":
-    if gr is None:
-        raise RuntimeError(
-            "Gradio is required to launch the UI. Install it via `pip install gradio`."
-        ) from _GRADIO_IMPORT_ERROR
-    app = build_interface()
-    app.launch()
+    demo.launch(theme=gr.themes.Default())
