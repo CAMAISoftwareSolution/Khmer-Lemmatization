@@ -14,9 +14,9 @@ short_description: Lemmatizing Khmer words to their root (base) form.
 
 A web-based tool for lemmatizing Khmer text reducing inflected or derived words to their root (base) form.
 
-## Demo
+<!-- ## Demo
 
-![Demo](demo.gif)
+![Demo](demo.gif) -->
 
 > Paste any Khmer text, click **Lemmatization**, and instantly see each token alongside its root form.
 
