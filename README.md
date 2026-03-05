@@ -17,6 +17,8 @@ A web-based tool for lemmatizing Khmer text reducing inflected or derived words 
 
 ## Demo
 
+![Demo](demo.gif)
+
 > Paste any Khmer text, click **Lemmatization**, and instantly see each token alongside its root form.
 
 ## Features
@@ -89,33 +91,6 @@ Contributions are welcome! To add words to the dictionary:
 
 For code contributions, please open an issue first to discuss your proposed change.
 
-## License
-
-This project is licensed under the **MIT License**.
-
-```
-MIT License
-
-Copyright (c) 2024 Phork Norak, Nhor Povketya, Ly Hor
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
 
 ## Developers
 
@@ -126,5 +101,3 @@ SOFTWARE.
 | Ly Hor | Data Analyst | [final-portfolio-kappa-rust.vercel.app](https://final-portfolio-kappa-rust.vercel.app/) |
 
 ---
-
-*Royal University of Phnom Penh — Data Science & Engineering Program*
