@@ -88,3 +88,15 @@ Contributions are welcome! To add words to the dictionary:
 3. Open a pull request with a brief description
 
 For code contributions, please open an issue first to discuss your proposed change.
+
+
+## Developers
+
+| Name | Role | Portfolio |
+|------|------|-----------|
+| Phork Norak | Full-Stack Developer | [phorknorak.vercel.app](https://phorknorak.vercel.app/) |
+| Nhor Povketya | Data Collection | [povketya.github.io/ketyanhor](https://povketya.github.io/ketyanhor/) |
+| Ly Hor | Data Collection | [final-portfolio-kappa-rust.vercel.app](https://final-portfolio-kappa-rust.vercel.app/) |
+
+---
+
