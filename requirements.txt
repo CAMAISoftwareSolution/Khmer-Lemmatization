@@ -1,3 +1,2 @@
-gradio==5.49.1
 khmer-nltk==1.6
 python-multipart>=0.0.18
