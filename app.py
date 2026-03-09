@@ -1,46 +1,31 @@
-from __future__ import annotations
-
 import json
 import string
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Sequence
+
 import gradio as gr
 from khmernltk import word_tokenize as khmer_word_tokenize
-_GRADIO_IMPORT_ERROR = None
 
 BASE_DIR = Path(__file__).resolve().parent
 DICT_PATH = BASE_DIR / "khmer_lemma_dictionary.json"
 
 KHMER_PUNCTUATION = {
-    "។",
-    "៕",
-    "៚",
-    "៖",
-    "៘",
-    "៙",
-    "៛",
-    "៝",
-    "ៗ",
-    "៑",
-    "៓",
-    "។",
-    "៘",
-    "ៜ",
+    "។", "៕", "៚", "៖", "៘", "៙", "៛", "៝",
+    "ៗ", "៑", "៓", "។", "៘", "ៜ",
 }
 ZERO_WIDTH_CHARS = {"\u200b", "\u200c", "\u200d"}
 PUNCTUATION_CHARS = set(string.punctuation) | KHMER_PUNCTUATION
 
 SAMPLE_TEXT = ("យើងត្រូវតែផ្គាប់ចិត្តខ្លួនឯងដោយការខ្ជាប់ខ្ជួននូវច្បាប់សីលធម៌ល្អ។ កុំផ្តឹងផ្តល់ ឬផ្តេកផ្តិតទៅលើកំហុសអតីតកាល។ ជីវិតប្រៀបដូចជាការរៀបចំរនាបនិងរនាស់ដើម្បីបណ្ដុះផលល្អ។ ត្រូវកកាយរកនូវចំណេះដឹងថ្មីៗ មិនមែនកកូរចលាចលនោះទេ។ ចេះចចឹករៀនសូត្រពីអ្នកដទៃ មិនមែនសសារឬសសិតរឿងឥតប្រយោជន៍ឡើយ។ ត្រូវជ្រើសរើសដោយឈ្លាសវៃ កុំឲ្យឱកាសល្អៗខ្ចាត់បាត់ ព្រោះយើងខ្ទាស់ចិត្តនឹងសេចក្តីស្អប់ ឬក្បង់យករបស់អាក្រក់។ គំនិតក្លាយជាល្អឬខ្មៅ គឺអាស្រ័យលើយើង ហើយយើងមិនគួរគ្មានមហិច្ឆតាឡើយ។ កុំឆ្កឹះរឿងអ្នកដទៃ កុំធ្វើអ្វីឲ្យឆ្គង។ ត្រូវរៀនសូត្រពីច្បងៗ ធ្វើការងារដោយច្បូតច្បាស់លាស់ ហើយឆ្លាក់ស្នាដៃល្អទុក។ ពេលជួបការលំបាក ត្រូវជ្រុះចោលនូវទុក្ខកង្វល់ ធ្វើចិត្តឲ្យជ្រះថ្លា ឲ្យការយល់ដឹងជ្រាបចូលក្នុងខ្លួន ហើយត្រៀបរៀបចំផែនការដើម្បីត្រងយកតែភាពជោគជ័យ។ ត្រូវផ្ចង់ស្មារតី ទាំងចិត្តផ្កូរឿងល្អ និងផ្ដល់ឲ្យអ្នកដទៃដោយចិត្តបរិសុទ្ធ។ កុំផ្ដាច់ទំនាក់ទំនងល្អ ត្រូវធ្វើអ្វីៗដោយផ្ទាល់ដៃ ហ៊ានផ្ទុកបន្ទុក ហើយប្រឹងប្រែងស្ទាក់ចាប់គោលដៅ ហើយស្រាយបំភ្លឺរាល់បញ្ហាដោយតម្លាភាព។"
 )
- 
+
 DEFAULT_STATS = {
-    # "Characters": "0",
-    "Total tokens": "0",
-    "Lemmatized tokens": "0",
+    "ពាក្យសរុប": "0",
+    "ពាក្យកម្លាយ": "0",
 }
 
 EMPTY_TABLE = [["-", "—", "—", "—"]]
+
 
 @dataclass
 class LemmaRow:
@@ -49,61 +34,50 @@ class LemmaRow:
     changed: bool
 
 
-def load_dictionary(path: Path = DICT_PATH) -> Dict[str, str]:
-    """Load lemma dictionary from JSON and fail loudly if something is wrong."""
+def load_dictionary(path=DICT_PATH):
     try:
-        with path.open(encoding="utf-8") as fp:
-            data = json.load(fp)
-    except FileNotFoundError as exc:
-        raise RuntimeError(f"Dictionary file not found at {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(f"Dictionary JSON is invalid: {exc}") from exc
-
+        with path.open(encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(f"Dictionary file not found at {path}")
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Dictionary JSON is invalid: {e}")
     if not isinstance(data, dict):
-        raise RuntimeError("Dictionary content must be an object/dict.")
+        raise RuntimeError("Dictionary must be a JSON object.")
     return data
 
 
-def _normalize_token(token: str) -> str:
+def _normalize_token(token):
     return "".join(ch for ch in token if ch not in ZERO_WIDTH_CHARS).strip()
 
 
-def _is_special_token(token: str) -> bool:
+def _is_special_token(token):
     normalized = _normalize_token(token)
-    if not normalized:
-        return True
-    return all(ch in PUNCTUATION_CHARS for ch in normalized)
+    return not normalized or all(ch in PUNCTUATION_CHARS for ch in normalized)
 
 
-def tokenize_khmernltk(text: str) -> List[str]:
-    """Use the CRF-based word segmenter from khmer-nltk."""
+def tokenize(text):
     if not text:
         return []
-    tokens = khmer_word_tokenize(text)
-    # The library can emit whitespace tokens; filter them out.
-    return [tok for tok in tokens if tok.strip()]
+    return [tok for tok in khmer_word_tokenize(text) if tok.strip()]
 
 
-def lemmatize_tokens(tokens: Sequence[str], dictionary: Dict[str, str]) -> List[LemmaRow]:
-    rows: List[LemmaRow] = []
+def lemmatize_tokens(tokens, dictionary):
+    rows = []
     for token in tokens:
         lemma = dictionary.get(token, token)
         rows.append(LemmaRow(token=token, lemma=lemma, changed=lemma != token))
     return rows
 
 
-def format_stats(rows: Sequence[LemmaRow], original_text: str) -> Dict[str, str]:
-    char_count = len(original_text)
-    token_count = len(rows)
-    changed = sum(1 for row in rows if row.changed)
+def format_stats(rows):
     return {
-        # "Characters": f"{char_count:,}",
-        "Total tokens": f"{token_count:,}",
-        "Lemmatized tokens": f"{changed:,}",
+        "ពាក្យសរុប": f"{len(rows):,}",
+        "ពាក្យកម្លាយ": f"{sum(1 for r in rows if r.changed):,}",
     }
 
 
-def render_stats_cards(stats: Dict[str, str]) -> str:
+def render_stats_cards(stats):
     cards = "".join(
         f"""
         <div class="kpi-card">
@@ -151,40 +125,31 @@ def render_stats_cards(stats: Dict[str, str]) -> str:
     """
 
 
-def run_pipeline(text: str) -> tuple:
-    tokens = [
-        token
-        for token in tokenize_khmernltk(text or "")
-        if not _is_special_token(token)
-    ]
+def run_pipeline(text):
+    tokens = [t for t in tokenize(text or "") if not _is_special_token(t)]
     rows = lemmatize_tokens(tokens, LEMMA_DICT)
-    table = [[idx + 1, row.token, row.lemma, "Yes" if row.changed else "No"] for idx, row in enumerate(rows)]
-    stats = format_stats(rows, text or "")
-
+    combined_text = "".join(r.lemma for r in rows)
+    table = [[i + 1, r.token, r.lemma, "បាន" if r.changed else "មិនបាន"] for i, r in enumerate(rows)]
     if not table:
-        # Inform the UI that there is nothing to display.
-        table = [["-", "—", "—", "—"]]
-    return table, render_stats_cards(stats)
+        table = EMPTY_TABLE
+    return table, render_stats_cards(format_stats(rows)), combined_text
 
 
 def clear_inputs():
-    # Use gr.update to reset both value and filters
-    return "", gr.update(value=EMPTY_TABLE), render_stats_cards(DEFAULT_STATS)
+    return "", gr.update(value=None), render_stats_cards(DEFAULT_STATS), ""
 
 
 def build_interface():
-    if gr is None:
-        raise RuntimeError(
-            "Gradio is required to build the UI. Install it via `pip install gradio`."
-        ) from _GRADIO_IMPORT_ERROR
-    with gr.Blocks(
-        title="Khmer Lemmatization Studio",
-    ) as demo:
+    with gr.Blocks(title="Khmer Lemmatization Studio", theme=gr.themes.Default()) as demo:
         gr.HTML(
             """
+            <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+            <style>
+              * { font-family: 'Kantumruy Pro', sans-serif !important; }
+            </style>
             <div style="text-align: center; margin-bottom: 1.5rem;">
               <h1>Khmer Lemmatization Studio</h1>
-              <p>Paste Khmer sentences, process them instantly, and compare each token to its Lemmatization.</p>
+              <p>ជួយសិស្សស្វែងរក <strong>ពាក្យឫស</strong> នៃ <strong>ពាក្យកម្លាយ</strong> ក្នុងភាសាខ្មែរបានយ៉ាងងាយស្រួល</p>
             </div>
             """
         )
@@ -192,68 +157,73 @@ def build_interface():
         with gr.Row():
             with gr.Column(scale=3):
                 text_input = gr.Textbox(
-                    label="Input text",
-                    placeholder="វាយអត្ថបទខ្មែរ...",
+                    label="បំពេញអត្ថបទ",
+                    placeholder="វាយ ឬបិទភ្ជាប់អត្ថបទខ្មែរនៅទីនេះ...",
                     lines=10,
                     autofocus=True,
                 )
                 with gr.Row():
-                    process_btn = gr.Button("Lemmatization", variant="primary")
-                    sample_btn = gr.Button("Load Sample")
-                    clear_btn = gr.Button("Clear")
+                    process_btn = gr.Button("រកពាក្យឫស", variant="primary")
+                    sample_btn = gr.Button("យកអត្ថបទគំរូ")
+                    clear_btn = gr.Button("លុបចោល")
                 gr.Markdown(
                     """
-                    **Workflow**
-                    1. Paste or type Khmer text.
-                    2. Click "Lemmatization".
-                    3. Review tokens, lemmas, and changes on the right.
+                    **របៀបប្រើ**
+                    1. វាយ ឬបិទភ្ជាប់អត្ថបទខ្មែរ
+                    2. ចុចប៊ូតុង **រកពាក្យឫស**
+                    3. មើលតារាងពាក្យកម្លាយ និងពាក្យឫស នៅខាងស្តាំ
                     """
                 )
             with gr.Column(scale=4):
                 stats_panel = gr.HTML(render_stats_cards(DEFAULT_STATS))
+                combined_output = gr.Textbox(
+                    label="អត្ថបទបន្ទាប់ពីរកពាក្យឫស",
+                    lines=5,
+                    interactive=False,
+                    show_copy_button=True,
+                    placeholder="ដំណើរការអត្ថបទដើម្បីមើលលទ្ធផលនៅទីនេះ...",
+                )
                 results_table = gr.Dataframe(
-                    headers=["#", "Token", "Lemmatization", "Status"],
+                    headers=["#", "ពាក្យ", "ពាក្យឫស", "ប្តូរ?"],
                     datatype=["number", "str", "str", "str"],
-                    value=EMPTY_TABLE,
+                    value=None,
                     interactive=False,
                     wrap=True,
-                    label="Results",
+                    label="លទ្ធផល",
                     elem_id="results_table"
                 )
 
-        process_btn.click(fn=run_pipeline, inputs=text_input, outputs=[results_table, stats_panel])
+        process_btn.click(fn=run_pipeline, inputs=text_input, outputs=[results_table, stats_panel, combined_output])
         sample_btn.click(
             fn=lambda: (SAMPLE_TEXT, *run_pipeline(SAMPLE_TEXT)),
             inputs=None,
-            outputs=[text_input, results_table, stats_panel],
+            outputs=[text_input, results_table, stats_panel, combined_output],
         )
         clear_btn.click(
             fn=clear_inputs,
             inputs=None,
-            outputs=[text_input, results_table, stats_panel],
+            outputs=[text_input, results_table, stats_panel, combined_output],
             js="() => { const table = document.getElementById('results_table'); if (table) { const inputs = table.querySelectorAll('input[type=\"text\"]'); inputs.forEach(input => input.value = ''); } }"
         )
 
-        # Reference and Dictionary Section
         gr.Markdown("---")
         gr.HTML(
             f"""
             <div style="margin-top: 2rem; padding: 20px; background: var(--background-fill-secondary); border-radius: 12px;">
-              <h2 style="margin-top: 0;">Dictionary Source</h2>
+              <h2 style="margin-top: 0;">ប្រភពវចនានុក្រម</h2>
               <p style="font-size: 1rem; margin: 12px 0;">
-                <strong>Source:</strong> Teacher Vatha -
+                <strong>ប្រភព:</strong> Teacher Vatha -
                 <a href="https://youtu.be/mfWl3fV7oMo?si=OuR45gnDqeml2oXw" target="_blank" style="color: var(--link-text-color); text-decoration: underline;">
                   ១០០០ពាក្យកម្លាយដោយផ្នត់ដើម (YouTube)
                 </a>
               </p>
               <p style="font-size: 1rem; margin: 12px 0;">
-                <strong>Total words our in dictionary:</strong> {len(LEMMA_DICT):,} entries
+                <strong>ចំនួនពាក្យក្នុងប្រព័ន្ធបច្ចុប្បន្ន:</strong> {len(LEMMA_DICT):,} ពាក្យ
               </p>
             </div>
             """
         )
 
-        # Display all dictionary entries
         dict_entries = [[i + 1, derived, root] for i, (derived, root) in enumerate(sorted(LEMMA_DICT.items()))]
         gr.Dataframe(
             headers=["#", "ពាក្យកម្លាយ", "ពាក្យឫស"],
@@ -261,19 +231,21 @@ def build_interface():
             datatype=["number", "str", "str"],
             interactive=False,
             wrap=True,
-            label="Complete Lemmatization Dictionary",
+            label="វចនានុក្រមពាក្យកម្លាយ និងពាក្យឫស",
         )
 
-        # Developer Credits
         gr.Markdown("---")
         gr.HTML(
             """
             <div style="text-align: center; padding: 20px; margin-top: 1rem;">
               <p style="font-size: 0.9rem; color: var(--body-text-color-subdued, #64748b);">
-                <strong>Developed by:</strong>
+                <strong>រចនាដោយ:</strong>
                 <a href="https://phorknorak.vercel.app/" target="_blank" style="color: var(--link-text-color); text-decoration: none; font-weight: 500;">Phork Norak</a>,
                 <a href="https://povketya.github.io/ketyanhor/" target="_blank" style="color: var(--link-text-color); text-decoration: none; font-weight: 500;">Nhor Povketya</a>,
                 <a href="https://final-portfolio-kappa-rust.vercel.app/" target="_blank" style="color: var(--link-text-color); text-decoration: none; font-weight: 500;">Ly Hor</a>
+                <br><strong>ទីប្រឹក្សា:</strong>
+                <a href="https://cadt.edu.kh/team/chamroeun-khim-phd/" target="_blank" style="color: var(--link-text-color); text-decoration: none; font-weight: 500;">Dr. Khim Chomrouen</a>,
+                <a href="https://www.researchgate.net/profile/Makara-Mao" target="_blank" style="color: var(--link-text-color); text-decoration: none; font-weight: 500;">Dr. Mao Makara</a>
               </p>
             </div>
             """
@@ -283,8 +255,7 @@ def build_interface():
 
 
 LEMMA_DICT = load_dictionary()
-
 demo = build_interface()
 
 if __name__ == "__main__":
-    demo.launch(theme=gr.themes.Default())
+    demo.launch()
